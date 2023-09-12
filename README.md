@@ -1,4 +1,6 @@
 # Authentication Services
+Version: 1.0
+
 This project aims to develop a robust and
 secure authentication system using Java Spring Boot, Spring Security,
 Hibernate, JPA, and other technologies to provide secure access control

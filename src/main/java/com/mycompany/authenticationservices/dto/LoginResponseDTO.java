@@ -11,6 +11,7 @@ import java.util.List;
 @Accessors(chain = true)
 public class LoginResponseDTO {
     private String uuid;
+    private String accountId;
     private String username;
     private String firstName;
     private String lastName;

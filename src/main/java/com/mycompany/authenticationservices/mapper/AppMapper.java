@@ -66,7 +66,7 @@ public class AppMapper {
         var loginResponseDTO = new LoginResponseDTO();
         BeanUtils.copyProperties(userEntity, loginResponseDTO);
         loginResponseDTO.setRoles(userEntity.getRoles().stream()
-                .map(roleEntity -> roleEntity.getCode().name().toString())
+                .map(roleEntity -> roleEntity.getCode().name())
                 .collect(Collectors.toList()));
         loginResponseDTO.setPermissions(!ObjectUtils.isEmpty(userEntity.getRoles()) ?
                 userEntity.getRoles().stream()

@@ -20,8 +20,7 @@ public class AppMapper {
 
     public UserEntity userDtoToEntity(UserDTO dto) {
         var userEntity = new UserEntity();
-        BeanUtils.copyProperties(dto, userEntity);
-        BeanUtils.copyProperties(dto.getRoles(), userEntity.getRoles());
+        BeanUtils.copyProperties(dto, userEntity); // roles are resolved to RoleEntity by the callers
         return userEntity;
     }
     public RoleEntity roleDtoToEntity(RoleDTO dto) {

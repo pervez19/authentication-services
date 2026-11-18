@@ -79,7 +79,7 @@ public class UserDetailsServiceImpl implements UserService {
 
         UserEntity userEntity = AppMapper.userDtoToEntity(signupDTO)
                 .setPassword(signupDTO.getPassword())
-                .setRoles(signupDTO.getRoles().stream().map(roleEnum -> roleService.getByName(roleEnum)).collect(Collectors.toSet()));
+                .setRoles(Optional.ofNullable(signupDTO.getRoles()).orElse(List.of()).stream().map(roleEnum -> roleService.getByName(roleEnum)).collect(Collectors.toSet()));
 
         return AppMapper.userEntityToDto(userRepository.save(userEntity));
     }

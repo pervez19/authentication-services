@@ -109,7 +109,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         UserEntity userEntity = AppMapper.userDtoToEntity(signupDTO)
                 .setPassword(signupDTO.getPassword())
-                .setRoles(signupDTO.getRoles().stream().map(roleEnum -> roleRepository.findByCode(roleEnum).get()).collect(Collectors.toSet()));
+                .setRoles(Optional.ofNullable(signupDTO.getRoles()).orElse(List.of()).stream().map(roleEnum -> roleRepository.findByCode(roleEnum).get()).collect(Collectors.toSet()));
 
         if (ObjectUtils.isEmpty(userEntity.getRoles()) || userEntity.getRoles().size() <= 0) {
             Set<RoleEntity> roleEntitySet = new HashSet<>();

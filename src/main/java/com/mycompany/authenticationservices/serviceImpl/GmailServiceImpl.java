@@ -46,7 +46,7 @@ public class GmailServiceImpl {
     private static final String FROM_EMAIL = "wasikfarhan74@gmail.com";
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
     private final Gmail service;
-    private static final String CLIENT_SECRET = "/gmail/client_secret_922644995789-cuk9kpa1a1l9635885qjjf1rou1rtupt.apps.googleusercontent.com.json";
+    private static final String CLIENT_SECRET = "/gmail/client_secret.json"; // gitignored: download from Google Cloud Console
 
     public GmailServiceImpl() throws Exception {
         NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();

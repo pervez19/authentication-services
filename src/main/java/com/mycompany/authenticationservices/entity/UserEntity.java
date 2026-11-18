@@ -60,13 +60,13 @@ public class UserEntity extends AuditModel<Long> implements Serializable, UserDe
     private boolean enabled = true;
 
     @Column(name = "account_non_expired")
-    private boolean accountNonExpired;
+    private boolean accountNonExpired = true; // new accounts are active (primitive default false blocked login)
 
     @Column(name = "credentials_non_expired")
-    private boolean credentialsNonExpired;
+    private boolean credentialsNonExpired = true;
 
     @Column(name = "account_non_locked")
-    private boolean accountNonLocked;
+    private boolean accountNonLocked = true;
 
     @Column(name = "is_deleted")
     private boolean isDeleted;

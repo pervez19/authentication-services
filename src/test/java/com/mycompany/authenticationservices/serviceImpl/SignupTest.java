@@ -12,6 +12,7 @@ import com.mycompany.authenticationservices.service.CompanyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -54,5 +55,24 @@ class SignupTest {
         assertThat(saved.getValue().getPassword()).isEqualTo("hashed");
         assertThat(saved.getValue().getAccountId()).isEqualTo("ACC-1");
         assertThat(created.getRoles()).containsExactly(RoleEnum.ROLE_ADMIN);
+    }
+
+    @Test
+    void newUserIsActiveAndCanLogIn() {
+        SignupDTO signup = new SignupDTO();
+        signup.setName("Alice Smith");
+        signup.setEmail("alice@example.com");
+        signup.setPassword("secret123");
+        service.registration(signup);
+
+        ArgumentCaptor<UserEntity> saved = ArgumentCaptor.forClass(UserEntity.class);
+        verify(userRepository).save(saved.capture());
+        UserEntity user = saved.getValue();
+        assertThat(user.isEnabled()).isTrue();
+        assertThat(user.isAccountNonExpired()).isTrue();
+        assertThat(user.isAccountNonLocked()).isTrue();
+        assertThat(user.isCredentialsNonExpired()).isTrue();
+        // the same check Spring Security runs at login; throws Locked/Disabled/Expired exceptions otherwise
+        new AccountStatusUserDetailsChecker().check(user);
     }
 }

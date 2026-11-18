@@ -10,9 +10,12 @@ import com.mycompany.authenticationservices.mapper.AppMapper;
 import com.mycompany.authenticationservices.repository.RoleRepository;
 import com.mycompany.authenticationservices.repository.UserRepository;
 import com.mycompany.authenticationservices.security.JwtTokenService;
+import com.mycompany.authenticationservices.security.TokenRevocationService;
 import com.mycompany.authenticationservices.service.AuthenticationService;
 import com.mycompany.authenticationservices.service.CompanyService;
 import com.mycompany.authenticationservices.service.UserService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.UnsupportedJwtException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,6 +35,7 @@ import java.util.stream.Collectors;
 public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenService jwtTokenService;
+    private final TokenRevocationService tokenRevocationService;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
 
@@ -51,10 +55,47 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserEntity user = (UserEntity) userService.loadUserByUsername(loginDTO.username());
+        return issueTokens(user, authentication);
+    }
 
+    @Override
+    public LoginResponseDTO refreshToken(String refreshToken) {
+        Claims claims = jwtTokenService.parseRefreshToken(refreshToken); // signature, expiry, token_type=refresh
+        if (tokenRevocationService.isRevokedForUser(claims)) {
+            throw new UnsupportedJwtException("Refresh token has been revoked");
+        }
+        String previousMark = tokenRevocationService.markUsed(claims);
+        if (TokenRevocationService.USED.equals(previousMark)) {
+            // Replay of an already-rotated refresh token: likely stolen. Kill every session of this user.
+            tokenRevocationService.revokeAllTokensOf(claims.getSubject());
+            throw new UnsupportedJwtException("Refresh token reuse detected; all sessions revoked");
+        }
+        if (previousMark != null) {
+            throw new UnsupportedJwtException("Refresh token has been revoked");
+        }
+        // Re-load the user: deleted/disabled/locked users cannot refresh, and roles are up to date.
+        UserEntity user = (UserEntity) userService.loadUserByUsername(claims.getSubject());
+        return issueTokens(user, new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+    }
+
+    @Override
+    public void logout(String accessToken, String refreshToken) {
+        Claims access = jwtTokenService.parseAccessToken(accessToken);
+        tokenRevocationService.revokeToken(access);
+        if (refreshToken != null) {
+            Claims refresh = jwtTokenService.parseRefreshToken(refreshToken);
+            if (refresh.getSubject().equals(access.getSubject())) {
+                tokenRevocationService.revokeToken(refresh);
+            }
+        }
+    }
+
+    private LoginResponseDTO issueTokens(UserEntity user, Authentication authentication) {
         return AppMapper.userEntityToLoginResponseDTO(user)
                 .setToken(jwtTokenService.doGenerateToken(authentication))
-                .setTokenDuration(jwtTokenService.getExpirationTime());
+                .setTokenDuration(jwtTokenService.getExpirationTime())
+                .setRefreshToken(jwtTokenService.doGenerateRefreshToken(authentication))
+                .setRefreshTokenDuration(jwtTokenService.getRefreshExpirationTime());
     }
 
     @Override

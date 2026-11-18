@@ -11,6 +11,7 @@ import com.mycompany.authenticationservices.exception.DataNotFoundException;
 import com.mycompany.authenticationservices.exception.DuplicateException;
 import com.mycompany.authenticationservices.mapper.AppMapper;
 import com.mycompany.authenticationservices.repository.UserRepository;
+import com.mycompany.authenticationservices.security.TokenRevocationService;
 import com.mycompany.authenticationservices.service.RoleService;
 import com.mycompany.authenticationservices.service.UserService;
 import com.mycompany.authenticationservices.utils.Utils;
@@ -38,6 +39,7 @@ import org.springframework.util.ObjectUtils;
 public class UserDetailsServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RoleService roleService;
+    private final TokenRevocationService tokenRevocationService;
     private final AccountStatusUserDetailsChecker detailsChecker = new AccountStatusUserDetailsChecker();
 
     @Override
@@ -113,9 +115,10 @@ public class UserDetailsServiceImpl implements UserService {
      */
     @Override
     public void deleteById(Long id) {
-        userRepository.findById(id)
+        UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("UserEntity not found for this account id " + id));
         userRepository.deleteById(id);
+        tokenRevocationService.revokeAllTokensOf(user.getUsername()); // tokens already issued stop working at the gateway
 
     }
 

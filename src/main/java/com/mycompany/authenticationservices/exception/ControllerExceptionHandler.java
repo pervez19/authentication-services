@@ -10,7 +10,8 @@ import com.mycompany.authenticationservices.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.BadCredentialsException;
+import io.jsonwebtoken.JwtException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -57,7 +58,8 @@ public class ControllerExceptionHandler {
         log.debug(ex.getMessage(), ex);
         return new ErrorResponse("error",String.valueOf(HttpStatus.METHOD_NOT_ALLOWED.value()), "Method Not Allowed. Please verify you request", TIMESTAMP);
     }
-    @ExceptionHandler(BadCredentialsException.class)
+    // BadCredentials, disabled/locked/unknown user, and invalid/expired/revoked JWTs are all 401.
+    @ExceptionHandler({AuthenticationException.class, JwtException.class})
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse BadCredentialsExceptions(Exception ex) {
         log.error(ex.getMessage(), ex);

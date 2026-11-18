@@ -18,6 +18,8 @@ public class LoginResponseDTO {
     private String email;
     private String token;
     private Integer tokenDuration;
+    private String refreshToken;
+    private Integer refreshTokenDuration;
     private List roles;
     private List permissions;
 }

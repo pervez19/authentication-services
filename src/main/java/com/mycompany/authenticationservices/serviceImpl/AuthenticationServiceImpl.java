@@ -49,12 +49,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public LoginResponseDTO authenticateUser(LoginDTO loginDTO) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginDTO.username(),
+                        loginDTO.email(),
                         loginDTO.password()
                 )
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        UserEntity user = (UserEntity) userService.loadUserByUsername(loginDTO.username());
+        UserEntity user = (UserEntity) userService.loadUserByUsername(loginDTO.email());
         return issueTokens(user, authentication);
     }
 
@@ -102,9 +102,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transient
     public UserDTO registration(SignupDTO signupDTO){
         signupDTO.setPassword(passwordEncoder.encode(signupDTO.getPassword()));
-        if (userRepository.findByUsername(signupDTO.getUsername()).isPresent()) {
-            throw new DuplicateException("Username Already exist !!");
-        }
+        signupDTO.setEmail(StringUtils.trimToEmpty(signupDTO.getEmail()).toLowerCase(Locale.ROOT));
         if (userRepository.findByEmail(signupDTO.getEmail()).isPresent()) {
             throw new DuplicateException("Email Already exist !!");
         }

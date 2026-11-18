@@ -15,14 +15,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserDTO {
     private Long id;
-    @NotEmpty(message = "username is mandatory")
-    @Size(min = 4, max = 24)
-    @NotBlank(message = "username is mandatory")
-    private String username;
-
-    private String firstName;
-
-    private String lastName;
+    @NotBlank(message = "name is mandatory")
+    @Size(min = 2, max = 100)
+    private String name;
 
     private String accountId;
     @Email

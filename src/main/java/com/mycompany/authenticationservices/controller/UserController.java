@@ -47,7 +47,7 @@ public class UserController {
     @PreAuthorize("hasAnyAuthority(" + AuthorizationConstants.CREATE_USER +")")
     @PostMapping
     public ResponseEntity<?> createUser(@Valid @RequestBody SignupDTO signupDTO) {
-        log.info("Sign up attempt from  user: " + signupDTO.getUsername());
+        log.info("Create user attempt for: " + signupDTO.getEmail());
         UserDTO userDTO = userService.createUser(signupDTO);
         return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
                         .buildAndExpand(userDTO.getId()).toUri())

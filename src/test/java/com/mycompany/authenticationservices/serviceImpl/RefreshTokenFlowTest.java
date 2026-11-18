@@ -25,22 +25,22 @@ class RefreshTokenFlowTest {
     private final AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
     private final TokenRevocationService revocation = mock(TokenRevocationService.class);
     private final UserService userService = mock(UserService.class);
-    private final UserEntity alice = new UserEntity().setUsername("alice");
+    private final UserEntity alice = new UserEntity().setEmail("alice@example.com").setName("Alice Smith");
     private final AuthenticationServiceImpl service = new AuthenticationServiceImpl(
             authenticationManager, jwt, revocation, userService, null, null, null, null);
 
     @BeforeEach
     void setUp() {
-        when(userService.loadUserByUsername("alice")).thenReturn(alice);
+        when(userService.loadUserByUsername("alice@example.com")).thenReturn(alice);
     }
 
     @Test
     void signinReturnsAccessAndRefreshToken() {
         when(authenticationManager.authenticate(any()))
                 .thenReturn(new UsernamePasswordAuthenticationToken(alice, null, alice.getAuthorities()));
-        LoginResponseDTO response = service.authenticateUser(new LoginDTO("alice", "secret123"));
-        assertThat(jwt.parseAccessToken(response.getToken()).getSubject()).isEqualTo("alice");
-        assertThat(jwt.parseRefreshToken(response.getRefreshToken()).getSubject()).isEqualTo("alice");
+        LoginResponseDTO response = service.authenticateUser(new LoginDTO("alice@example.com", "secret123"));
+        assertThat(jwt.parseAccessToken(response.getToken()).getSubject()).isEqualTo("alice@example.com");
+        assertThat(jwt.parseRefreshToken(response.getRefreshToken()).getSubject()).isEqualTo("alice@example.com");
         assertThat(response.getRefreshTokenDuration()).isEqualTo(120_000);
     }
 
@@ -49,7 +49,7 @@ class RefreshTokenFlowTest {
         String refresh = refreshTokenFor(alice);
         LoginResponseDTO response = service.refreshToken(refresh);
 
-        assertThat(jwt.parseAccessToken(response.getToken()).getSubject()).isEqualTo("alice");
+        assertThat(jwt.parseAccessToken(response.getToken()).getSubject()).isEqualTo("alice@example.com");
         Claims newRefresh = jwt.parseRefreshToken(response.getRefreshToken());
         assertThat(newRefresh.getId()).isNotEqualTo(jwt.parseRefreshToken(refresh).getId());
         verify(revocation).markUsed(argThat(c -> c.getId().equals(jwt.parseRefreshToken(refresh).getId())));
@@ -59,7 +59,7 @@ class RefreshTokenFlowTest {
     void replayedRefreshTokenRevokesAllSessions() {
         when(revocation.markUsed(any())).thenReturn(TokenRevocationService.USED);
         assertThatThrownBy(() -> service.refreshToken(refreshTokenFor(alice))).isInstanceOf(JwtException.class);
-        verify(revocation).revokeAllTokensOf("alice");
+        verify(revocation).revokeAllTokensOf("alice@example.com");
     }
 
     @Test

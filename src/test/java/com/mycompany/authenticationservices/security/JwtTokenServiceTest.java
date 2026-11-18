@@ -34,8 +34,8 @@ public class JwtTokenServiceTest {
 
     @Test
     void signsWithPrivateKeyAndVerifiesWithPublicKey() {
-        Claims claims = service.parseAccessToken(service.doGenerateToken(login("alice")));
-        assertThat(claims.getSubject()).isEqualTo("alice");
+        Claims claims = service.parseAccessToken(service.doGenerateToken(login("alice@example.com")));
+        assertThat(claims.getSubject()).isEqualTo("alice@example.com");
         assertThat(claims.getId()).isNotBlank();
         assertThat(claims.getIssuedAt()).isNotNull();
     }
@@ -56,7 +56,7 @@ public class JwtTokenServiceTest {
 
     @Test
     void rejectsRefreshTokenUsedAsAccessToken() {
-        String refresh = service.doGenerateRefreshToken(login("alice"));
+        String refresh = service.doGenerateRefreshToken(login("alice@example.com"));
         assertThatThrownBy(() -> service.parseAccessToken(refresh)).isInstanceOf(JwtException.class);
     }
 
@@ -74,7 +74,7 @@ public class JwtTokenServiceTest {
         ValueOperations<String, String> ops = mock(ValueOperations.class);
         when(redis.opsForValue()).thenReturn(ops);
         TokenRevocationService revocation = new TokenRevocationService(redis, config);
-        Claims claims = service.parseAccessToken(service.doGenerateToken(login("alice")));
+        Claims claims = service.parseAccessToken(service.doGenerateToken(login("alice@example.com")));
         long iat = claims.getIssuedAt().toInstant().getEpochSecond();
 
         when(ops.multiGet(anyList())).thenReturn(Arrays.asList(null, null));
@@ -97,7 +97,7 @@ public class JwtTokenServiceTest {
         ValueOperations<String, String> ops = mock(ValueOperations.class);
         when(redis.opsForValue()).thenReturn(ops);
         TokenRevocationService revocation = new TokenRevocationService(redis, config);
-        Claims refresh = service.parseRefreshToken(service.doGenerateRefreshToken(login("alice")));
+        Claims refresh = service.parseRefreshToken(service.doGenerateRefreshToken(login("alice@example.com")));
         String key = TokenRevocationService.REVOKED_TOKEN_KEY + refresh.getId();
 
         when(ops.setIfAbsent(eq(key), eq(TokenRevocationService.USED), any(Duration.class))).thenReturn(true);
@@ -113,12 +113,12 @@ public class JwtTokenServiceTest {
 
     @Test
     void parseRefreshTokenRejectsAccessToken() {
-        String access = service.doGenerateToken(login("alice"));
+        String access = service.doGenerateToken(login("alice@example.com"));
         assertThatThrownBy(() -> service.parseRefreshToken(access)).isInstanceOf(JwtException.class);
     }
 
     private static UsernamePasswordAuthenticationToken login(String username) {
-        return new UsernamePasswordAuthenticationToken(new UserEntity().setUsername(username), null);
+        return new UsernamePasswordAuthenticationToken(new UserEntity().setEmail(username), null);
     }
 
     public static JwtConfig config(KeyPair keys) {

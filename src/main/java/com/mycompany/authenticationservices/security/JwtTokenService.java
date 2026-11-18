@@ -28,7 +28,7 @@ public class JwtTokenService {
 		return Jwts
 			.builder()
 			.setId(UUID.randomUUID().toString()) // jti: lets a single token be revoked (logout)
-			.setSubject(user.getUsername())
+			.setSubject(user.getEmail()) // subject = email (users have no username)
 			.claim("authorities",
 					user.getAuthorities().stream().map(GrantedAuthority::getAuthority)
 							.collect(Collectors.toList()))
@@ -42,7 +42,7 @@ public class JwtTokenService {
 		final UserEntity user = (UserEntity) authentication.getPrincipal();
 		return Jwts.builder()
 				.setId(UUID.randomUUID().toString())
-				.setSubject(user.getUsername())
+				.setSubject(user.getEmail())
 				.claim(TOKEN_TYPE_CLAIM, REFRESH_TOKEN_TYPE) // verifiers reject it as an access token
 				.setIssuedAt(new Date(System.currentTimeMillis()))
 				.setExpiration(new Date(System.currentTimeMillis() + jwtConfig.getRefreshExpiration()))

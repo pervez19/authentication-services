@@ -28,26 +28,17 @@ import java.util.stream.Collectors;
 @EntityListeners(AuditingEntityListener.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = "username"),
         @UniqueConstraint(columnNames = "email")
 })
 public class UserEntity extends AuditModel<Long> implements Serializable, UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-    @NotNull
-    @Column(name = "first_name", length = 50)
-    private String firstName;
-
-    @NotNull
-    @Column(name = "last_name", length = 50)
-    private String lastName;
-
-    @NotNull(message = "User Name cannot be null")
-    @NotEmpty(message = "User Name cannot be empty")
-    @Column(length = 50, unique = true, nullable = false)
-    @Size(min = 2, max = 50, message = "Name should have at least 2 characters to 50")
-    private String username;
+    @NotNull(message = "Name cannot be null")
+    @NotEmpty(message = "Name cannot be empty")
+    @Column(name = "name", length = 100, nullable = false)
+    @Size(min = 2, max = 100, message = "Name should have at least 2 characters to 100")
+    private String name;
 
     @NotNull(message = "accountId cannot be null")
     @NotEmpty(message = "accountId cannot be empty")
@@ -86,6 +77,13 @@ public class UserEntity extends AuditModel<Long> implements Serializable, UserDe
             @JoinColumn(name = "role_id", referencedColumnName = "id", updatable = true)})
     private Set<RoleEntity> roles = new HashSet<>();
 
+
+    /** Users sign in with their email: Spring Security's "username" is the email. */
+    @Override
+    @JsonIgnore
+    public String getUsername() {
+        return email;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

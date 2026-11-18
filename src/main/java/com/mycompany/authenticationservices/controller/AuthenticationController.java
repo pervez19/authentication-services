@@ -34,7 +34,7 @@ public class AuthenticationController {
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginDTO loginDTO) {
-        log.info("Sign in attempt from  user: " + loginDTO.username());
+        log.info("Sign in attempt from  user: " + loginDTO.email());
         LoginResponseDTO authenticationResponse = authenticationService.authenticateUser(loginDTO);
         return ResponseEntity.ok(new Response("success", "Login Successful", authenticationResponse));
     }
@@ -61,7 +61,7 @@ public class AuthenticationController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> registration(@Valid @RequestBody SignupDTO signupDTO) {
-        log.info("Sign up attempt from  user: " + signupDTO.getUsername());
+        log.info("Sign up attempt from  user: " + signupDTO.getEmail());
         UserDTO userDTO = authenticationService.registration(signupDTO);
         return ResponseEntity.ok(new Response("success", "Registration Successfully", userDTO));
     }

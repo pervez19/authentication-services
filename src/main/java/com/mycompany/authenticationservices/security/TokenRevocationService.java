@@ -14,7 +14,7 @@ import java.util.List;
  * (TokenRevocationService there reads the same keys):
  * <ul>
  *   <li>{@code jwt:revoked:<jti>} - a single token was revoked (logout); expires with the token.</li>
- *   <li>{@code jwt:revoked-before:<username>} - epoch seconds; every token of that user issued at or
+ *   <li>{@code jwt:revoked-before:<email>} - epoch seconds; every token of that user issued at or
  *   before it is revoked (user deleted/disabled); expires after the longest token lifetime.</li>
  * </ul>
  */
@@ -59,9 +59,9 @@ public class TokenRevocationService {
                 && claims.getIssuedAt().toInstant().getEpochSecond() <= Long.parseLong(revokedBefore);
     }
 
-    public void revokeAllTokensOf(String username) {
+    public void revokeAllTokensOf(String email) {
         long maxLifetimeMs = Math.max(jwtConfig.getExpiration(), jwtConfig.getRefreshExpiration());
-        redis.opsForValue().set(REVOKED_BEFORE_KEY + username,
+        redis.opsForValue().set(REVOKED_BEFORE_KEY + email,
                 String.valueOf(Instant.now().getEpochSecond()), Duration.ofMillis(maxLifetimeMs));
     }
 

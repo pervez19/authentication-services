@@ -43,10 +43,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				if (tokenRevocationService.isRevoked(claims)) {
 					throw new JwtException("Token has been revoked");
 				}
-				final String username = claims.getSubject();
-				if (StringUtils.isNotEmpty(username)) {
+				final String email = claims.getSubject();
+				if (StringUtils.isNotEmpty(email)) {
 					// Loads only active users and checks enabled/locked/expired, so a disabled user is rejected.
-					final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+					final UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 					final UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
 							userDetails, null, userDetails.getAuthorities());
 					authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

@@ -12,18 +12,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-	@Query("SELECT u FROM users u WHERE u.email = :email AND u.enabled = true")
+	// Emails are matched case-insensitively: "Alice@Mail.com" and "alice@mail.com" are the same account.
+	@Query("SELECT u FROM users u WHERE lower(u.email) = lower(:email) AND u.enabled = true")
     Optional<UserEntity> findActiveByEmail(@Param("email") String email);
-	@Query("SELECT u FROM users u WHERE u.username = :username AND u.enabled = true")
-	Optional<UserEntity> findActiveByUsername(@Param("username") String username);
-	@Query("SELECT DISTINCT u FROM users u WHERE u.username = :username")
-	Optional<UserEntity> findByUsername(@Param("username") String username);
-	@Query("SELECT u FROM users u WHERE u.email = :email")
+	@Query("SELECT u FROM users u WHERE lower(u.email) = lower(:email)")
 	Optional<UserEntity> findByEmail(@Param("email") String email);
 
-	Optional<UserEntity> findByUsernameAndIdNot(String username, Long id);
-
-	Optional<UserEntity> findByEmailAndIdNot(String email, Long id);
+	Optional<UserEntity> findByEmailIgnoreCaseAndIdNot(String email, Long id);
 
 	List<UserEntity> findByAccountId(String accountId);
 }

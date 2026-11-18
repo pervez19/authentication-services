@@ -43,28 +43,17 @@ public class UserDetailsServiceImpl implements UserService {
     private final AccountStatusUserDetailsChecker detailsChecker = new AccountStatusUserDetailsChecker();
 
     @Override
-    public UserDetails loadUserByUsername(String usernameValue) {
-        Optional<UserEntity> user = getUserByUsername(usernameValue);
+    public UserDetails loadUserByUsername(String email) {
+        // Spring Security calls the login identifier "username"; in this service it is the email.
+        Optional<UserEntity> user = Optional.ofNullable(StringUtils.trimToNull(email))
+                .flatMap(userRepository::findActiveByEmail);
         if (user.isEmpty()) {
-            throw new UsernameNotFoundException("Invalid username or password.");
+            throw new UsernameNotFoundException("Invalid email or password.");
         }
         detailsChecker.check(user.get());
         return user.get();
     }
 
-
-    /**
-     * @param usernameValue username or email
-     * @return Optional User
-     */
-    private Optional<UserEntity> getUserByUsername(String usernameValue) {
-        // trim username value
-        var username = StringUtils.trimToNull(usernameValue);
-        if (StringUtils.isEmpty(username)) {
-            return Optional.empty();
-        }
-        return username.contains("@") ? userRepository.findActiveByEmail(username) : userRepository.findActiveByUsername(username);
-    }
 
     /**
      * {@inheritDoc}
@@ -83,9 +72,7 @@ public class UserDetailsServiceImpl implements UserService {
      */
     @Override
     public UserDTO createUser(SignupDTO signupDTO) {
-        if (userRepository.findByUsername(signupDTO.getUsername()).isPresent()) {
-            throw new DuplicateException("Username Already exist !!");
-        }
+        signupDTO.setEmail(StringUtils.trimToEmpty(signupDTO.getEmail()).toLowerCase(Locale.ROOT));
         if (userRepository.findByEmail(signupDTO.getEmail()).isPresent()) {
             throw new DuplicateException("Email Already exist !!");
         }
@@ -118,7 +105,7 @@ public class UserDetailsServiceImpl implements UserService {
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("UserEntity not found for this account id " + id));
         userRepository.deleteById(id);
-        tokenRevocationService.revokeAllTokensOf(user.getUsername()); // tokens already issued stop working at the gateway
+        tokenRevocationService.revokeAllTokensOf(user.getEmail()); // tokens already issued stop working at the gateway
 
     }
 
@@ -152,8 +139,7 @@ public class UserDetailsServiceImpl implements UserService {
 		checkUpdatedUserIsExist(newUser);
 		return AppMapper.userEntityToDto(userRepository.findById(id) //
                 .map(user -> {
-                    user.setFirstName(StringUtils.trimToNull(newUser.getFirstName()));
-                    user.setLastName(StringUtils.trimToNull(newUser.getLastName()));
+                    user.setName(StringUtils.trimToNull(newUser.getName()));
                     return userRepository.save(user);
                 }).orElseThrow(() -> new DataNotFoundException("UserEntity not found for this id" + id)));
     }
@@ -173,11 +159,8 @@ public class UserDetailsServiceImpl implements UserService {
 		checkUpdatedUserIsExist(newUser);
         return AppMapper.userEntityToDto(userRepository.findById(id) //
                 .map(user -> {
-                    if (!ObjectUtils.isEmpty(StringUtils.trimToNull(newUser.getFirstName()))) {
-                        user.setFirstName(newUser.getFirstName());
-                    }
-                    if (!ObjectUtils.isEmpty(StringUtils.trimToNull(newUser.getLastName()))) {
-                        user.setLastName(newUser.getLastName());
+                    if (!ObjectUtils.isEmpty(StringUtils.trimToNull(newUser.getName()))) {
+                        user.setName(newUser.getName().trim());
                     }
                     if (!ObjectUtils.isEmpty(newUser.getRoles()) && newUser.getRoles().size()>0) {
                         user.getRoles().addAll(newUser.getRoles().stream().distinct().map(roleEnum -> roleService.getByName(roleEnum)).collect(Collectors.toSet()));
@@ -212,10 +195,7 @@ public class UserDetailsServiceImpl implements UserService {
     }
 
     private void checkUpdatedUserIsExist(UserDTO userDTO) {
-        if (userRepository.findByUsernameAndIdNot(userDTO.getUsername(), userDTO.getId()).isPresent()) {
-            throw new DuplicateException("Username Already exist !!");
-        }
-        if (userRepository.findByEmailAndIdNot(userDTO.getEmail(), userDTO.getId()).isPresent()) {
+        if (userRepository.findByEmailIgnoreCaseAndIdNot(userDTO.getEmail(), userDTO.getId()).isPresent()) {
             throw new DuplicateException("Email Already exist !!");
         }
     }

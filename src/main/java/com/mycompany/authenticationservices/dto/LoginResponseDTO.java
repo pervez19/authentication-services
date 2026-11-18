@@ -12,9 +12,7 @@ import java.util.List;
 public class LoginResponseDTO {
     private String uuid;
     private String accountId;
-    private String username;
-    private String firstName;
-    private String lastName;
+    private String name;
     private String email;
     private String token;
     private Integer tokenDuration;
